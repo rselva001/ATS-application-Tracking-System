@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>User Management</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f7f7f7;
+    }
+    input, button {
+      margin: 5px;
+      padding: 8px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+      background: white;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    th {
+      background-color: #2e7d32;
+      color: white;
+    }
+    h2 {
+      color: #2e7d32;
+    }
+    .result-box {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-top: 10px;
+      background-color: #fff;
+      width: fit-content;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>User Management Panel</h1>
+
+  <h2>Create User</h2>
+  <input type="text" id="name" placeholder="Name">
+  <input type="email" id="email" placeholder="Email">
+  <input type="text" id="phone" placeholder="Phone">
+  <input type="password" id="password" placeholder="Password">
+  <input type="text" id="role" placeholder="Role (e.g., Admin)">
+  <button onclick="createUser()">Create</button>
+
+  <h2>Get User By ID</h2>
+  <input type="number" id="getUserId" placeholder="User ID">
+  <button onclick="getUserById()">Get</button>
+  <div id="userResult" class="result-box"></div>
+
+  <h2>Get User By Email</h2>
+  <input type="email" id="getEmail" placeholder="Email">
+  <button onclick="getUserByEmail()">Get</button>
+  <div id="emailResult" class="result-box"></div>
+
+  <h2>Update User</h2>
+  <input type="number" id="updateUserId" placeholder="User ID">
+  <input type="text" id="updateName" placeholder="Name">
+  <input type="email" id="updateEmail" placeholder="Email">
+  <input type="text" id="updatePhone" placeholder="Phone">
+  <input type="password" id="updatePassword" placeholder="Password">
+  <input type="text" id="updateRole" placeholder="Role">
+  <button onclick="updateUser()">Update</button>
+
+  <h2>Delete User</h2>
+  <input type="number" id="deleteUserId" placeholder="User ID">
+  <button onclick="deleteUser()">Delete</button>
+
+  <h2>All Users</h2>
+  <button onclick="getAllUsers()">Load Users</button>
+  <table id="userTable">
+    <thead>
+      <tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Role</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const baseUrl = "http://localhost:8080/api/users";
+
+    async function createUser() {
+      const user = {
+        name: document.getElementById("name").value,
+        email: document.getElementById("email").value,
+        phoneNumber: document.getElementById("phone").value,
+        password: document.getElementById("password").value,
+        role: document.getElementById("role").value
+      };
+      const res = await fetch(baseUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(user)
+      });
+      if (res.ok) alert("User created!");
+      else alert("Failed to create user.");
+    }
+
+    async function getAllUsers() {
+      const res = await fetch(baseUrl);
+      const users = await res.json();
+      const tbody = document.querySelector("#userTable tbody");
+      tbody.innerHTML = "";
+      users.forEach(u => {
+        tbody.innerHTML += `<tr>
+          <td>${u.id}</td>
+          <td>${u.name}</td>
+          <td>${u.email}</td>
+          <td>${u.phoneNumber}</td>
+          <td>${u.role}</td>
+        </tr>`;
+      });
+    }
+
+    async function getUserById() {
+      const id = document.getElementById("getUserId").value;
+      const res = await fetch(`${baseUrl}/${id}`);
+      const resultDiv = document.getElementById("userResult");
+
+      if (!res.ok) {
+        resultDiv.innerHTML = "User not found!";
+        return;
+      }
+
+      const user = await res.json();
+      resultDiv.innerHTML = `
+        <strong>ID:</strong> ${user.id}<br>
+        <strong>Name:</strong> ${user.name}<br>
+        <strong>Email:</strong> ${user.email}<br>
+        <strong>Phone:</strong> ${user.phoneNumber}<br>
+        <strong>Role:</strong> ${user.role}
+      `;
+    }
+
+    async function getUserByEmail() {
+      const email = document.getElementById("getEmail").value;
+      const res = await fetch(`${baseUrl}/email/${email}`);
+      const resultDiv = document.getElementById("emailResult");
+
+      if (!res.ok) {
+        resultDiv.innerHTML = "User not found!";
+        return;
+      }
+
+      const user = await res.json();
+      resultDiv.innerHTML = `
+        <strong>ID:</strong> ${user.id}<br>
+        <strong>Name:</strong> ${user.name}<br>
+        <strong>Email:</strong> ${user.email}<br>
+        <strong>Phone:</strong> ${user.phoneNumber}<br>
+        <strong>Role:</strong> ${user.role}
+      `;
+    }
+
+    async function updateUser() {
+      const id = document.getElementById("updateUserId").value;
+      const updated = {
+        name: document.getElementById("updateName").value,
+        email: document.getElementById("updateEmail").value,
+        phoneNumber: document.getElementById("updatePhone").value,
+        password: document.getElementById("updatePassword").value,
+        role: document.getElementById("updateRole").value
+      };
+      const res = await fetch(`${baseUrl}/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated)
+      });
+      if (res.ok) alert("User updated!");
+      else alert("Failed to update user.");
+    }
+
+    async function deleteUser() {
+      const id = document.getElementById("deleteUserId").value;
+      const res = await fetch(`${baseUrl}/${id}`, { method: "DELETE" });
+      if (res.ok) alert("User deleted!");
+      else alert("Failed to delete user.");
+    }
+  </script>
+</body>
+</html>

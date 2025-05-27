@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Job Management</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; }
+    input, button { margin: 5px; padding: 8px; }
+    table { border-collapse: collapse; width: 100%; background: white; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #2e7d32; color: white; }
+    .box { background: white; padding: 10px; margin-top: 10px; border: 1px solid #ccc; }
+    h2 { color: #2e7d32; }
+  </style>
+</head>
+<body>
+
+  <h1>Job Management Panel</h1>
+
+  <h2>Create Job</h2>
+  <input type="text" id="title" placeholder="Title">
+  <input type="text" id="description" placeholder="Description">
+  <input type="text" id="department" placeholder="Department">
+  <input type="text" id="location" placeholder="Location">
+  <input type="text" id="status" placeholder="Status (e.g., OPEN)">
+  <button onclick="createJob()">Create Job</button>
+
+  <h2>Get Job by ID</h2>
+  <input type="number" id="jobId" placeholder="Job ID">
+  <button onclick="getJobById()">Fetch Job</button>
+  <div id="jobResult" class="box"></div>
+
+  <h2>Update Job</h2>
+  <input type="number" id="updateId" placeholder="Job ID">
+  <input type="text" id="updateTitle" placeholder="Title">
+  <input type="text" id="updateDesc" placeholder="Description">
+  <input type="text" id="updateDept" placeholder="Department">
+  <input type="text" id="updateLoc" placeholder="Location">
+  <input type="text" id="updateStatus" placeholder="Status (e.g., CLOSED)">
+  <button onclick="updateJob()">Update Job</button>
+
+  <h2>Delete Job</h2>
+  <input type="number" id="deleteId" placeholder="Job ID">
+  <button onclick="deleteJob()">Delete Job</button>
+
+  <h2>Get Jobs by Status</h2>
+  <input type="text" id="filterStatus" placeholder="Status (e.g., OPEN)">
+  <button onclick="getJobsByStatus()">Filter</button>
+
+  <h2>All Jobs</h2>
+  <button onclick="getAllJobs()">Load All Jobs</button>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th><th>Title</th><th>Description</th><th>Department</th>
+        <th>Location</th><th>Status</th><th>Posted At</th>
+      </tr>
+    </thead>
+    <tbody id="jobTable"></tbody>
+  </table>
+
+  <script>
+    const baseUrl = "http://localhost:8080/api/jobs";
+
+    async function createJob() {
+      const job = {
+        title: document.getElementById("title").value,
+        description: document.getElementById("description").value,
+        department: document.getElementById("department").value,
+        location: document.getElementById("location").value,
+        status: document.getElementById("status").value
+      };
+      const res = await fetch(baseUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(job)
+      });
+      alert(res.ok ? "Job created!" : "Failed to create job.");
+    }
+
+    async function getJobById() {
+      const id = document.getElementById("jobId").value;
+      const res = await fetch(`${baseUrl}/${id}`);
+      const div = document.getElementById("jobResult");
+
+      if (!res.ok) {
+        div.innerHTML = "Job not found.";
+        return;
+      }
+
+      const job = await res.json();
+      div.innerHTML = `
+        <strong>ID:</strong> ${job.id}<br>
+        <strong>Title:</strong> ${job.title}<br>
+        <strong>Description:</strong> ${job.description}<br>
+        <strong>Department:</strong> ${job.department}<br>
+        <strong>Location:</strong> ${job.location}<br>
+        <strong>Status:</strong> ${job.status}<br>
+        <strong>Posted At:</strong> ${job.postedAt}
+      `;
+    }
+
+   
+    async function updateJob() {
+    	  const id = document.getElementById("updateId").value;
+
+    	  // Fetch the existing job to get the postedAt value
+    	  const existingRes = await fetch(`${baseUrl}/${id}`);
+    	  if (!existingRes.ok) {
+    	    alert("Job not found.");
+    	    return;
+    	  }
+    	  const existingJob = await existingRes.json();
+
+    	  const updated = {
+    	    title: document.getElementById("updateTitle").value,
+    	    description: document.getElementById("updateDesc").value,
+    	    department: document.getElementById("updateDept").value,
+    	    location: document.getElementById("updateLoc").value,
+    	    status: document.getElementById("updateStatus").value.trim(),
+
+    	    postedAt: existingJob.postedAt // ✅ Preserve the original date
+    	  };
+
+    	  const res = await fetch(`${baseUrl}/${id}`, {
+    	    method: "PUT",
+    	    headers: { "Content-Type": "application/json" },
+    	    body: JSON.stringify(updated)
+    	  });
+
+    	  if (res.ok) {
+    	    alert("Job updated!");
+    	  } else {
+    	    const errorText = await res.text();
+    	    alert("Failed to update job: " + errorText);
+    	  }
+    	}
+
+
+    async function deleteJob() {
+      const id = document.getElementById("deleteId").value;
+      const res = await fetch(`${baseUrl}/${id}`, { method: "DELETE" });
+      const msg = await res.text();
+      alert(msg);
+    }
+
+    async function getAllJobs() {
+      const res = await fetch(baseUrl);
+      const jobs = await res.json();
+      const tbody = document.getElementById("jobTable");
+      tbody.innerHTML = "";
+      jobs.forEach(job => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${job.id}</td>
+            <td>${job.title}</td>
+            <td>${job.description}</td>
+            <td>${job.department}</td>
+            <td>${job.location}</td>
+            <td>${job.status}</td>
+            <td>${job.postedAt}</td>
+          </tr>`;
+      });
+    }
+
+    async function getJobsByStatus() {
+      const status = document.getElementById("filterStatus").value.toUpperCase();
+      const res = await fetch(`${baseUrl}/status/${status}`);
+      const jobs = await res.json();
+      const tbody = document.getElementById("jobTable");
+      tbody.innerHTML = "";
+      jobs.forEach(job => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${job.id}</td>
+            <td>${job.title}</td>
+            <td>${job.description}</td>
+            <td>${job.department}</td>
+            <td>${job.location}</td>
+            <td>${job.status}</td>
+            <td>${job.postedAt}</td>
+          </tr>`;
+      });
+      
+    }
+  </script>
+</body>
+</html>

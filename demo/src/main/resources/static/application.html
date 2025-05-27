@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Application Management</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background-color: #f4f4f4; }
+    input, button { margin: 5px; padding: 8px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #2e7d32; color: white; }
+    h2 { color: #2e7d32; }
+    .section { margin-bottom: 30px; }
+    #resultBox { background: #fff; border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+  <h1>Application Management Panel</h1>
+
+  <div class="section">
+    <h2>Create Application</h2>
+    <input type="number" id="jobId" placeholder="Job ID">
+    <input type="number" id="candidateId" placeholder="Candidate ID">
+    <input type="text" id="status" placeholder="Status (e.g., applied)">
+    <button onclick="createApplication()">Create</button>
+  </div>
+
+  <div class="section">
+    <h2>Get Application By ID</h2>
+    <input type="number" id="appId" placeholder="Application ID">
+    <button onclick="getApplicationById()">Fetch</button>
+    <div id="resultBox"></div>
+  </div>
+
+  <div class="section">
+    <h2>Update Application</h2>
+    <input type="number" id="updateId" placeholder="ID">
+    <input type="number" id="updateJobId" placeholder="Job ID">
+    <input type="number" id="updateCandidateId" placeholder="Candidate ID">
+    <input type="text" id="updateStatus" placeholder="Status">
+    <button onclick="updateApplication()">Update</button>
+  </div>
+
+  <div class="section">
+    <h2>Delete Application</h2>
+    <input type="number" id="deleteId" placeholder="Application ID">
+    <button onclick="deleteApplication()">Delete</button>
+  </div>
+
+  <div class="section">
+    <h2>All Applications</h2>
+    <button onclick="getAllApplications()">Load</button>
+    <table id="applicationTable">
+      <thead>
+        <tr><th>ID</th><th>Status</th><th>Job ID</th><th>Candidate ID</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    const baseUrl = "http://localhost:8080/api/applications";
+
+    async function createApplication() {
+      const application = {
+        status: document.getElementById("status").value,
+        job: { id: document.getElementById("jobId").value },
+        candidate: { id: document.getElementById("candidateId").value }
+      };
+
+      const res = await fetch(baseUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(application)
+      });
+
+      alert(res.ok ? "Application created!" : "Failed to create application.");
+    }
+
+    async function getApplicationById() {
+      const id = document.getElementById("appId").value;
+      const res = await fetch(`${baseUrl}/${id}`);
+      const resultBox = document.getElementById("resultBox");
+
+      if (!res.ok) {
+        resultBox.innerText = "Application not found!";
+        return;
+      }
+
+      const app = await res.json();
+      resultBox.innerHTML = `
+        <b>ID:</b> ${app.id}<br>
+        <b>Status:</b> ${app.status}<br>
+        <b>Job ID:</b> ${app.job?.id}<br>
+        <b>Candidate ID:</b> ${app.candidate?.id}<br>
+      `;
+    }
+
+    async function updateApplication() {
+      const id = document.getElementById("updateId").value;
+      const updated = {
+        status: document.getElementById("updateStatus").value,
+        job: { id: document.getElementById("updateJobId").value },
+        candidate: { id: document.getElementById("updateCandidateId").value }
+      };
+
+      const res = await fetch(`${baseUrl}/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated)
+      });
+
+      alert(res.ok ? "Application updated!" : "Failed to update application.");
+    }
+
+    async function deleteApplication() {
+      const id = document.getElementById("deleteId").value;
+      const res = await fetch(`${baseUrl}/${id}`, { method: "DELETE" });
+      alert(res.ok ? "Application deleted!" : "Failed to delete application.");
+    }
+
+    async function getAllApplications() {
+      const res = await fetch(baseUrl);
+      const apps = await res.json();
+      const tbody = document.querySelector("#applicationTable tbody");
+      tbody.innerHTML = "";
+      apps.forEach(a => {
+        tbody.innerHTML += `<tr>
+          <td>${a.id}</td>
+          <td>${a.status}</td>
+          <td>${a.job?.id}</td>
+          <td>${a.candidate?.id}</td>
+        </tr>`;
+      });
+    }
+  </script>
+</body>
+</html>

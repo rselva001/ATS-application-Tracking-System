@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Interview Management</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; }
+    input, button { margin: 5px; padding: 8px; }
+    table { border-collapse: collapse; width: 100%; background: white; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #2e7d32; color: white; }
+    .box { background: white; padding: 10px; margin-top: 10px; border: 1px solid #ccc; }
+    h2 { color: #2e7d32; }
+  </style>
+</head>
+<body>
+
+  <h1>Interview Management</h1>
+
+  <h2>Create Interview</h2>
+  <input type="datetime-local" id="scheduledTime">
+  <input type="number" id="applicationId" placeholder="Application ID">
+  <input type="number" id="interviewerId" placeholder="Interviewer (User) ID">
+  <button onclick="createInterview()">Create Interview</button>
+
+  <h2>Get Interview by ID</h2>
+  <input type="number" id="getInterviewId" placeholder="Interview ID">
+  <button onclick="getInterviewById()">Fetch</button>
+  <div id="interviewResult" class="box"></div>
+
+  <h2>Update Interview</h2>
+  <input type="number" id="updateId" placeholder="Interview ID">
+  <input type="datetime-local" id="updateScheduledTime">
+  <input type="number" id="updateApplicationId" placeholder="Application ID">
+  <input type="number" id="updateInterviewerId" placeholder="Interviewer ID">
+  <button onclick="updateInterview()">Update Interview</button>
+
+  <h2>Delete Interview</h2>
+  <input type="number" id="deleteId" placeholder="Interview ID">
+  <button onclick="deleteInterview()">Delete</button>
+
+  <h2>Filter by Application ID</h2>
+  <input type="number" id="filterApplicationId" placeholder="Application ID">
+  <button onclick="getByApplication()">Get Interviews</button>
+
+  <h2>Filter by Interviewer ID</h2>
+  <input type="number" id="filterInterviewerId" placeholder="Interviewer ID">
+  <button onclick="getByInterviewer()">Get Interviews</button>
+
+  <h2>All Interviews</h2>
+  <button onclick="getAllInterviews()">Load All</button>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Scheduled Time</th><th>Application ID</th><th>Interviewer ID</th></tr>
+    </thead>
+    <tbody id="interviewTable"></tbody>
+  </table>
+
+  <script>
+    const baseUrl = "http://localhost:8080/api/interviews";
+
+    async function createInterview() {
+      const interview = {
+        scheduledTime: document.getElementById("scheduledTime").value,
+        application: { id: parseInt(document.getElementById("applicationId").value) },
+        interviewer: { id: parseInt(document.getElementById("interviewerId").value) }
+      };
+      const res = await fetch(baseUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(interview)
+      });
+      alert(res.ok ? "Interview created!" : "Failed to create.");
+    }
+
+    async function getAllInterviews() {
+      const res = await fetch(baseUrl);
+      const data = await res.json();
+      const tbody = document.getElementById("interviewTable");
+      tbody.innerHTML = "";
+      data.forEach(i => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${i.id}</td>
+            <td>${i.scheduledTime}</td>
+            <td>${i.application?.id}</td>
+            <td>${i.interviewer?.id}</td>
+          </tr>`;
+      });
+    }
+
+    async function getInterviewById() {
+      const id = document.getElementById("getInterviewId").value;
+      const res = await fetch(`${baseUrl}/${id}`);
+      const box = document.getElementById("interviewResult");
+      if (!res.ok) {
+        box.innerText = "Interview not found!";
+        return;
+      }
+      const i = await res.json();
+      box.innerHTML = `
+        <strong>ID:</strong> ${i.id}<br>
+        <strong>Scheduled Time:</strong> ${i.scheduledTime}<br>
+        <strong>Application ID:</strong> ${i.application?.id}<br>
+        <strong>Interviewer ID:</strong> ${i.interviewer?.id}
+      `;
+    }
+
+    async function updateInterview() {
+      const id = document.getElementById("updateId").value;
+      const interview = {
+        scheduledTime: document.getElementById("updateScheduledTime").value,
+        application: { id: parseInt(document.getElementById("updateApplicationId").value) },
+        interviewer: { id: parseInt(document.getElementById("updateInterviewerId").value) }
+      };
+      const res = await fetch(`${baseUrl}/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(interview)
+      });
+      alert(res.ok ? "Interview updated!" : "Failed to update.");
+    }
+
+    async function deleteInterview() {
+      const id = document.getElementById("deleteId").value;
+      const res = await fetch(`${baseUrl}/${id}`, { method: "DELETE" });
+      const msg = await res.text();
+      alert(msg);
+    }
+
+    async function getByApplication() {
+      const appId = document.getElementById("filterApplicationId").value;
+      const res = await fetch(`${baseUrl}/application/${appId}`);
+      const data = await res.json();
+      const tbody = document.getElementById("interviewTable");
+      tbody.innerHTML = "";
+      data.forEach(i => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${i.id}</td>
+            <td>${i.scheduledTime}</td>
+            <td>${i.application?.id}</td>
+            <td>${i.interviewer?.id}</td>
+          </tr>`;
+      });
+    }
+
+    async function getByInterviewer() {
+      const intId = document.getElementById("filterInterviewerId").value;
+      const res = await fetch(`${baseUrl}/interviewer/${intId}`);
+      const data = await res.json();
+      const tbody = document.getElementById("interviewTable");
+      tbody.innerHTML = "";
+      data.forEach(i => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${i.id}</td>
+            <td>${i.scheduledTime}</td>
+            <td>${i.application?.id}</td>
+            <td>${i.interviewer?.id}</td>
+          </tr>`;
+      });
+    }
+  </script>
+</body>
+</html>

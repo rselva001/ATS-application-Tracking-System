@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Candidate Management</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f4f4f4; }
+    input, button { margin: 5px; padding: 8px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; background: white; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+    th { background-color: #2e7d32; color: white; }
+    h2 { color: #2e7d32; }
+    #resultBox {
+      margin: 10px 0; padding: 10px;
+      background: #fff; border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Candidate Management</h1>
+
+  <h2>Create Candidate</h2>
+  <input type="text" id="name" placeholder="Name">
+  <input type="email" id="email" placeholder="Email">
+  <input type="text" id="phone" placeholder="Phone">
+  <input type="text" id="resumeUrl" placeholder="Resume URL">
+  <button onclick="createCandidate()">Create</button>
+
+  <h2>Get Candidate By ID</h2>
+  <input type="number" id="getId" placeholder="Candidate ID">
+  <button onclick="getCandidateById()">Get</button>
+
+  <h2>Get Candidate By Email</h2>
+  <input type="email" id="getEmail" placeholder="Email">
+  <button onclick="getCandidateByEmail()">Get</button>
+
+  <div id="resultBox"></div>
+
+  <h2>Update Candidate</h2>
+  <input type="number" id="updateId" placeholder="ID">
+  <input type="text" id="updateName" placeholder="Name">
+  <input type="email" id="updateEmail" placeholder="Email">
+  <input type="text" id="updatePhone" placeholder="Phone">
+  <input type="text" id="updateResumeUrl" placeholder="Resume URL">
+  <button onclick="updateCandidate()">Update</button>
+
+  <h2>Delete Candidate</h2>
+  <input type="number" id="deleteId" placeholder="Candidate ID">
+  <button onclick="deleteCandidate()">Delete</button>
+
+  <h2>All Candidates</h2>
+  <button onclick="getAllCandidates()">Load All</button>
+  <table id="candidateTable">
+    <thead>
+      <tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Resume URL</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const baseUrl = "http://localhost:8080/api/candidates";
+
+    async function createCandidate() {
+      const candidate = {
+        name: document.getElementById("name").value,
+        email: document.getElementById("email").value,
+        phone: document.getElementById("phone").value,
+        resumeUrl: document.getElementById("resumeUrl").value
+      };
+      const res = await fetch(baseUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(candidate)
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        alert("Error: " + text);
+        return;
+      }
+      alert("Candidate created!");
+    }
+
+    async function getCandidateById() {
+      const id = document.getElementById("getId").value;
+      const res = await fetch(`${baseUrl}/${id}`);
+      const resultBox = document.getElementById("resultBox");
+      if (!res.ok) {
+        const text = await res.text();
+        resultBox.innerText = "Error: " + text;
+        return;
+      }
+      const data = await res.json();
+      resultBox.innerHTML = `
+        <b>ID:</b> ${data.id}<br>
+        <b>Name:</b> ${data.name}<br>
+        <b>Email:</b> ${data.email}<br>
+        <b>Phone:</b> ${data.phone}<br>
+        <b>Resume:</b> ${data.resumeUrl}
+      `;
+    }
+
+    async function getCandidateByEmail() {
+      const email = document.getElementById("getEmail").value;
+      const res = await fetch(`${baseUrl}/email/${email}`);
+      const resultBox = document.getElementById("resultBox");
+      if (!res.ok) {
+        const text = await res.text();
+        resultBox.innerText = "Error: " + text;
+        return;
+      }
+      const data = await res.json();
+      resultBox.innerHTML = `
+        <b>ID:</b> ${data.id}<br>
+        <b>Name:</b> ${data.name}<br>
+        <b>Email:</b> ${data.email}<br>
+        <b>Phone:</b> ${data.phone}<br>
+        <b>Resume:</b> ${data.resumeUrl}
+      `;
+    }
+
+    async function updateCandidate() {
+      const id = document.getElementById("updateId").value;
+      const candidate = {
+        name: document.getElementById("updateName").value,
+        email: document.getElementById("updateEmail").value,
+        phone: document.getElementById("updatePhone").value,
+        resumeUrl: document.getElementById("updateResumeUrl").value
+      };
+      const res = await fetch(`${baseUrl}/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(candidate)
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        alert("Update error: " + text);
+        return;
+      }
+      alert("Candidate updated!");
+    }
+
+    async function deleteCandidate() {
+      const id = document.getElementById("deleteId").value;
+      const res = await fetch(`${baseUrl}/${id}`, { method: "DELETE" });
+      const text = await res.text();
+      alert(text);
+    }
+
+    async function getAllCandidates() {
+      const res = await fetch(baseUrl);
+      const tbody = document.querySelector("#candidateTable tbody");
+      if (!res.ok) {
+        const text = await res.text();
+        alert("Failed to fetch candidates: " + text);
+        return;
+      }
+      const candidates = await res.json();
+      tbody.innerHTML = "";
+      candidates.forEach(c => {
+        tbody.innerHTML += `<tr>
+          <td>${c.id}</td>
+          <td>${c.name}</td>
+          <td>${c.email}</td>
+          <td>${c.phone}</td>
+          <td>${c.resumeUrl}</td>
+        </tr>`;
+      });
+    }
+  </script>
+</body>
+</html>
